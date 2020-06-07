@@ -2,37 +2,29 @@ library(rgeos)
 library(rgdal)               #install.package("rgdal",type = "source",repos = NULL)
 library(maptools)
 library(ggplot2)
+library(plyr)
 
-plotmap <-function()
-{
+setwd("C:/Users/USER/Desktop/cmder/real-estate/real-estate")
+
+#read shp file
 taiwanmap<-readShapeSpatial("twmapdata/TOWN_MOI_1090324.shp")               #readshpfile
-taiwanmap.df<-fortify(taiwanmap,region = "TOWNID")                          #transform shpdf to df
+taiwanmap.county<-fortify(taiwanmap,region = "COUNTYID")                    #transform shpdf to df
+taiwanmap.df<-fortify(taiwanmap,region = "TOWNID")  #transform shpdfto df
 
-taiwanmap$TOWNNAME<- iconv(taiwanmap$TOWNNAME,from = "UTF-8", to ="CP950")  #transform the encoding
+#remove the Spratly Islands and Pratas Island
+x<-which(taiwanmap.county$lat<=20)
+taiwanmap.county<-taiwanmap.county[-x,]
+x<-which(taiwanmap.df$lat<=20)
+taiwanmap.df<-taiwanmap.df[-x,]
 
-NameIdTable <- data.frame(id = taiwanmap$TOWNID,name = taiwanmap$TOWNNAME)  #create a df include Townname & TownID
+#transform the encoding
+taiwanmap$TOWNNAME<- iconv(taiwanmap$TOWNNAME,from = "UTF-8", to ="CP950")  
+taiwanmap$COUNTYNAME<- iconv(taiwanmap$COUNTYNAME,from = "UTF-8", to ="CP950")  
+
+#create a df include townname & TownID
+NameIdTable <- data.frame(id = taiwanmap$TOWNID,name = taiwanmap$TOWNNAME)  
 NameIdTable<-cbind(NameIdTable,
-                   idlabel=substr(NameIdTable$ID,start = 1,stop= 1))
+                   idlabel=substr(NameIdTable$id,start = 1,stop= 1))
 
-####
-y<-rnorm(length(taiwanmap$TOWNID))                                        #create a dataframe with random
-x<-data.frame(name=taiwanmap$TOWNNAME,                                    #norm              
-              id=taiwanmap$TOWNID,                  
-              y,
-              stringsAsFactors = F)
-####
 
-finalplot<-merge(taiwanmap.df,x,by="id",all.x=T)
 
-head(finalplot)
-
-twcmap<-ggplot()+geom_polygon(data=finalplot,
-                               aes(x=long,y=lat,
-                                     group=group,
-                                     fill=y),
-                             color="black",
-                             size=0.25
-                             )
-                     
-#twcmap+coord_map()
-}
