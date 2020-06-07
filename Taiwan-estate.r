@@ -20,10 +20,14 @@ ReadFile<-function(i)
   }
 }
 
-ReadAllFile <- function()
+ReadAllFile <- function(i,year)
 {
-  
+  path<-paste("../",year,"-",i,sep = "")
+  setwd(path)
+  cat("file1",year,"-",i,"\n")
+  return(adply(1:26,.margins = 1,.fun = ReadFile))
 }
+taiwany<-adply(1:4,.margins = 1,.fun = ReadAllFile,year=103)
 
 #read estate data and clean up the data
 taiwan<-adply(1:26,.margins = 1,.fun = ReadFile)
@@ -48,7 +52,12 @@ twcmap<-ggplot()+geom_polygon(data = finalplot2,
                                   group=group,
                                   fill=y),
                               color="black",
-                              size=0.25)
+                              size=0.25)+
+  scale_fill_gradientn(
+    colours = brewer.pal(9,"Reds"))+
+  theme_void()+
+  coord_map()+
+  labs(title = "price of the real estate")
 
       #tablea<-NameIdTable[NameIdTable$idlabel==LETTERS[1],]
       #a<-merge(taiwana,tablea,by = "name")

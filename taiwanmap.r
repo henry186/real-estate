@@ -3,8 +3,9 @@ library(rgdal)               #install.package("rgdal",type = "source",repos = NU
 library(maptools)
 library(ggplot2)
 library(plyr)
+library(RColorBrewer)
 
-setwd("C:/Users/USER/Desktop/cmder/real-estate/real-estate")
+setwd("downloads/real-estate")
 
 #read shp file
 taiwanmap<-readShapeSpatial("twmapdata/TOWN_MOI_1090324.shp")               #readshpfile
