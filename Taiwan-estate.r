@@ -61,10 +61,18 @@ ReadAllFile <- function(i,year)
 
 #read estate data and clean up the data
 taiwan<-adply(1:4,.margins = 1,.fun = ReadAllFile,year=103)
+taiwan<-taiwan%>%filter(交易標的!="土地"&交易標的!="車位"&單價元平方公尺>0)
 taiwan <-taiwan[c(30,2,23,24,3,9,16,10,11,12,13,14,17,18,19,20,21,22,25,26,27)]
+taiwan[3]<- as.numeric(taiwan[[3]])
+taiwan[6]<- as.numeric(taiwan[[6]])+19110000
+taiwan[7]<- as.numeric(taiwan[[7]])
 colnames(taiwan)[c(1,2,4)]<-c("id","name","PricePerSqrtm")
 taiwan$PricePerSqrtm<-as.numeric(taiwan$PricePerSqrtm)
 
+#transfirm to class date
+a<-taiwan$交易年月日
+taiwan$交易年月日<-paste(substr(a,1,4),substr(a,5,6),substr(a,7,8),sep="-")
+taiwan[6]<-as.Date(taiwan[[6]])
 #calculate the avg of price/squaremeters
 priceMean<-ddply(taiwan,.(id),summarize,mean = round(mean(PricePerSqrtm,na.rm = T)))
 
@@ -79,6 +87,7 @@ p<-data.frame(name=taiwanmap$COUNTYNAME,
               id=taiwanmap$COUNTYID,
               stringsAsFactors = F)
 
+#meanplot
 mean_plot<-merge(p,priceMean,by= "id")
 meanPlot<-merge(taiwanmap.county,mean_plot,by="id",all.mean_plot=T)
 priceMeanMap<-ggplot()+geom_polygon(data = meanPlot,
@@ -94,6 +103,7 @@ priceMeanMap<-ggplot()+geom_polygon(data = meanPlot,
   coord_map()+
   labs(title = "mean price of the real estate")
 
+#maxplot
 max_plot<-merge(p,priceMax,by= "id")
 maxPlot<-merge(taiwanmap.county,max_plot,by="id",all.max_plot=T)
 priceMaxMap<-ggplot()+geom_polygon(data = maxPlot,
@@ -108,7 +118,7 @@ priceMaxMap<-ggplot()+geom_polygon(data = maxPlot,
   theme_void()+
   coord_map()+
   labs(title = "max price of the real estate")
-##要把0弄掉
+#minplot
 min_plot<-merge(p,priceMin,by= "id")
 minPlot<-merge(taiwanmap.county,min_plot,by="id",all.min_plot=T)
 priceMinMap<-ggplot()+geom_polygon(data = minPlot,
