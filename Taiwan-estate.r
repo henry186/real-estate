@@ -20,7 +20,7 @@ ReadFile<-function(i)
                   stringsAsFactors = F)
     x<-x[-1,]
     cat(sprintf("read file %s\n",filename))
-    return(cbind(x,ID=LETTERS[i]))
+    return(cbind(id=LETTERS[i],x))
   }
   
 }
@@ -43,10 +43,12 @@ ReadAllFile <- function(i,year)
 readyear<-function(year)
 {
 taiwan<-adply(1:4,.margins = 1,.fun = ReadAllFile,year=year)
-taiwan<-taiwan%>%filter(交易標的!="土地"&交易標的!="車位")
-taiwan <-taiwan[c(30,2,23,24,3,9,16,10,11,12,13,14,17,18,19,20,21,22,25,26,27)]
+taiwan<-taiwan%>%filter(交易標的=="房地(土地+建物)"|交易標的=="房地(土地+建物)+車位"|
+                              交易標的=="建物")
+taiwan <-taiwan[c(2 , 3 , 24 , 25 , 4 , 10 , 17 , 11 , 12 , 13 , 14 ,
+                  15 , 18 , 19 , 20 , 21 , 22 , 23 , 26 , 27 , 28)]
 
-colnames(taiwan)[c(1,2,4)]<-c("id","name","PricePerSqrtm")
+colnames(taiwan)[c(2,4)]<-c("name","PricePerSqrtm")
 
 taiwan[3]<- as.numeric(taiwan[[3]])
 taiwan[4]<- as.numeric((taiwan[[4]]))
@@ -75,6 +77,8 @@ plotmap<-function(taiwan,choosemap)
   NameIdTable <- data.frame(id = taiwanmap$COUNTYID,
                             name = taiwanmap$COUNTYNAME,
                             stringsAsFactors = F)  
+  NameIdTable<-unique(NameIdTable)
+  
   taiwanmap.county<-fortify(taiwanmap,region = "COUNTYID")  #transform shpdf to df
   #remove the Spratly Islands and Pratas Island
   x<-which(taiwanmap.county$lat<=20)
@@ -85,9 +89,8 @@ plotmap<-function(taiwan,choosemap)
   #meanplot
   #calculate the avg of price/squaremeters
   priceMean<-ddply(taiwan,.(id),summarize,mean = round(mean(PricePerSqrtm,na.rm = T)))
-  
-  mean_plot<-merge(priceMean,NameIdTable,by= "id",all.NameIdTable=T)
-  meanPlot<-merge(taiwanmap.county,mean_plot,by="id",all.mean_plot=T)
+  mean_plot<-right_join(priceMean,NameIdTable,by= "id")
+  meanPlot<-inner_join(taiwanmap.county,mean_plot,by="id")
   priceMeanMap<-ggplot()+geom_polygon(data = meanPlot,
                                       aes(x=long,
                                           y=lat,
@@ -108,9 +111,9 @@ plotmap<-function(taiwan,choosemap)
   #calculate the max value of price/square meters
   
   priceMax<-ddply(taiwan,.(id),summarise,max=max(PricePerSqrtm,na.rm = T))
-  max_plot<-merge(p,priceMax,by= "id")
+  max_plot<-left_join(NameIdTable,priceMax,by= "id")
   
-  maxPlot<-merge(taiwanmap.county,max_plot,by="id",all.max_plot=T)
+  maxPlot<-inner_join(taiwanmap.county,max_plot,by="id")
   priceMaxMap<-ggplot()+geom_polygon(data = maxPlot,
                                      aes(x=long,
                                          y=lat,
@@ -131,8 +134,8 @@ plotmap<-function(taiwan,choosemap)
   #calculate the min value of price/square meters
   priceMin<-ddply(taiwan,.(id),summarise,min=min(PricePerSqrtm,na.rm = T))
   
-  min_plot<-merge(p,priceMin,by= "id")
-  minPlot<-merge(taiwanmap.county,min_plot,by="id",all.min_plot=T)
+  min_plot<-left_join(NameIdTable,priceMin,by= "id")
+  minPlot<-inner_join(taiwanmap.county,min_plot,by="id",all.min_plot=T)
   priceMinMap<-ggplot()+geom_polygon(data = minPlot,
                                      aes(x=long,
                                          y=lat,
@@ -148,13 +151,13 @@ plotmap<-function(taiwan,choosemap)
   return(priceMinMap)
   }
 }
-#plot the map of the max,min,mean of the  estate price
-#grid.arrange(priceMaxMap,priceMinMap,priceMeanMap,nrow = 2)
-
-
-
 
 setwd("~/real-estate/108-2")
 
 taiwan <- adply(108,.margins = 1,.fun=readyear)
 
+#plot the three maps
+#grid.arrange(plotmap(taiwan,"mean"),
+#             plotmap(taiwan,"min"),
+#             plotmap(taiwan,"max"),
+#             nrow = 2)
