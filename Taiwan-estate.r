@@ -12,7 +12,7 @@ readPopulation<- function(year)
 {
   path<-paste("population/",year,".xls",sep = "")
   population<-read_xls(path,sheet = 1)[-2:-1,]
-  colnames(population)<-c("name","æˆ¶æ•¸","population","male","female")
+  colnames(population)<-c("name","?ˆ¶?•¸","population","male","female")
   population[3]<-as.numeric(population$population)
   a<-substr(population$name[2],4,4)
   population[1]<-gsub(a,"",population$name)
@@ -67,25 +67,34 @@ taiwan[7]<- as.numeric(taiwan[[7]])+19110000
 taiwan[13]<-as.numeric(taiwan[[13]])
 
 
-taiwan<-taiwan%>%filter(äº¤æ˜“æ¨™çš„=="æˆ¿åœ°(åœŸåœ°+å»ºç‰©)"
-                            |äº¤æ˜“æ¨™çš„=="æˆ¿åœ°(åœŸåœ°+å»ºç‰©)+è»Šä½"
-                            |äº¤æ˜“æ¨™çš„=="å»ºç‰©")
-taiwan<-taiwan%>%filter(äº¤æ˜“å¹´æœˆæ—¥>=20140101)
-taiwan<-taiwan%>%filter(ä¸»è¦ç”¨é€”=="ä½å®…"
-                            |ä¸»è¦ç”¨é€”=="ä½å®…ç”¨"
-                            |ä¸»è¦ç”¨é€”=="ä½æˆ¿"
-                            |ä¸»è¦ç”¨é€”=="ä½å®¶ç”¨"
-                            |ä¸»è¦ç”¨é€”=="ä½å•†ç”¨"
-                            |ä¸»è¦ç”¨é€”=="ä½å·¥ç”¨"
-                            |ä¸»è¦ç”¨é€”=="è¦‹å…¶ä»–ç™»è¨˜äº‹é …"
-                            |ä¸»è¦ç”¨é€”=="è¦‹å…¶å®ƒç™»è¨˜äº‹é …"
-                            |ä¸»è¦ç”¨é€”=="åº—èˆ–ã€ä½å®…"
-                            |ä¸»è¦ç”¨é€”=="åœ‹æ°‘ä½å®…"
-                            |ä¸»è¦ç”¨é€”=="é›†åˆä½å®…")
+taiwan<-taiwan%>%filter(¥æ©ö¼Ğªº=="©Ğ¦a(¤g¦a+«Øª«)"
+                            |¥æ©ö¼Ğªº=="©Ğ¦a(¤g¦a+«Øª«)+¨®¦ì"
+                            |¥æ©ö¼Ğªº=="«Øª«")
+taiwan<-taiwan%>%filter(¥æ©ö¦~¤ë¤é>=20140101)
+taiwan<-taiwan%>%filter(¥D­n¥Î³~=="¦í¦v"
+                            |¥D­n¥Î³~=="¦í¦v¥Î"
+                            |¥D­n¥Î³~=="¦í©Ğ"
+                            |¥D­n¥Î³~=="¦í®a¥Î"
+                            |¥D­n¥Î³~=="¦í°Ó¥Î"
+                            |¥D­n¥Î³~=="¦í¤u¥Î"
+                            |¥D­n¥Î³~=="¨£¨ä¥Lµn°O¨Æ¶µ"
+                            |¥D­n¥Î³~=="¨£¨ä¥¦µn°O¨Æ¶µ"
+                            |¥D­n¥Î³~=="©±çE¡B¦í¦v"
+                            |¥D­n¥Î³~=="°ê¥Á¦í¦v"
+                            |¥D­n¥Î³~=="¶°¦X¦í¦v")
+taiwan<-taiwan%>%filter(taiwan$«Øª«²{ªp®æ§½.©Ğ!="0")
+taiwan<-taiwan%>%filter(taiwan$PricePerSqrtm!=0)
+taiwan<-taiwan%>%filter(taiwan$Á`¼Ó¼h¼Æ!=""
+                        &taiwan$Á`¼Ó¼h¼Æ!="(ªÅ¥Õ)"
+                        &taiwan$Á`¼Ó¼h¼Æ!="000"
+                        &taiwan$Á`¼Ó¼h¼Æ!="043"
+                        &taiwan$Á`¼Ó¼h¼Æ!="¨£¨Ï¥Î°õ·Ó"
+                        &taiwan$Á`¼Ó¼h¼Æ!="¨£¨ä¥Lµn°O¨Æ¶µ")
+                       
 
 #transfirm to class date
-a<-taiwan$äº¤æ˜“å¹´æœˆæ—¥
-taiwan$äº¤æ˜“å¹´æœˆæ—¥<-paste(substr(a,1,4),substr(a,5,6)
+a<-taiwan$¥æ©ö¦~¤ë¤é
+taiwan$¥æ©ö¦~¤ë¤é<-paste(substr(a,1,4),substr(a,5,6)
                     ,substr(a,7,8),sep="-")
 taiwan[6]<-as.Date(taiwan[[6]])
 
@@ -176,7 +185,7 @@ plotmap<-function(taiwan=taiwan,taiwanmap=taiwanmap,choosemap,year=106)
   population<-readPopulation(107)
   population_plot<-right_join(population,NameIdTable,by="name")
   populationPlot<-right_join(population_plot,taiwanmap.county,by="id")
-  options(scipen = 999) #ä¸è‡ªå‹•è½‰è½‰ç§‘å­¸è¨˜è™Ÿ
+  options(scipen = 999) 
     populationMap<-ggplot()+geom_polygon(data = populationPlot,
                                      aes(x=long,
                                          y=lat,
@@ -195,9 +204,37 @@ plotmap<-function(taiwan=taiwan,taiwanmap=taiwanmap,choosemap,year=106)
   
 }
 
-setwd("~/downloads/real-estate/108-2")
+drawan <- function(){
 
-taiwan <- adply(105,.margins = 1,.fun=readyear)[-1]
+priceMean<-ddply(taiwan,.(id),summarize,mean = round(mean(PricePerSqrtm,na.rm = T)))
+priceMax<-ddply(taiwan,.(id),summarise,max=max(PricePerSqrtm,na.rm = T))
+priceMin<-ddply(taiwan,.(id),summarise,min=min(PricePerSqrtm,na.rm = T))
+tradesum<-ddply(taiwan,.(id),summarise,sum=sum(PricePerSqrtm!=0,na.rm = T))
+¿¤¥« <-c("»O¥_¥«","»O¤¤¥«","°ò¶©¥«","»O«n¥«","°ª¶¯¥«","·s¥_¥«","©yÄõ¿¤","®ç¶é¥«","¹Å¸q¥«","·s¦Ë¿¤","­]®ß¿¤","«n§ë¿¤","¹ü¤Æ¿¤","·s¦Ë¥«","¶³ªL¿¤","¹Å¸q¿¤","«ÌªF¿¤","ªá½¬¿¤","»OªF¿¤","ª÷ªù¿¤","¼ê´ò¿¤","³s¦¿¿¤") 
+priceMean <- data.frame("¿¤¥«"=¿¤¥«,priceMean)
+priceMax <- data.frame("¿¤¥«"=¿¤¥«,priceMax)
+priceMin <- data.frame("¿¤¥«"=¿¤¥«,priceMin)
+tradesum <- data.frame("¿¤¥«"=¿¤¥«,tradesum)
+houseuse <- data.frame("price"=round(taiwan$PricePerSqrtm,-4),"¥æ©ö¼Ğªº"=taiwan$¥æ©ö¼Ğªº)
+sqrtm <- round(taiwan$Á`»ù¤¸ / taiwan$PricePerSqrtm, -1)
+sqpr <- data.frame("id"=taiwan$id, "price"=taiwan$PricePerSqrtm ,"©W¼Æ"=sqrtm)
+sqpr <- sqpr%>%filter(©W¼Æ<8000)
+sqpr <- sqpr%>%filter(price<400000)
+anprice<- c(priceMean$mean,priceMax$max,priceMin$min)
+pricedf<- data.frame("¿¤¥«"=rep(¿¤¥«,times=3),"©Ğ»ù"=anprice,"ann"=c(rep("Mean",times=22),rep("Max",times=22),rep("Min",times=22)))
+
+ggplot(priceMean,aes(mean,¿¤¥«))+geom_col(position = "dodge")+labs(x="¨C¥­¤è¤½¤Ø¥­§¡»ù®æ")
+ggplot(houseuse,aes(price,fill=¥æ©ö¼Ğªº))+geom_histogram(stat = "count",position = "fill")+labs(x="¨C¥­¤è¤½¤Ø»ù®æ",y="¥æ©ö¼Ğªº¤ñ¨Ò")+xlim(0,400000)+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),labels=c("0%","25%","50%","75%","100%"))
+ggplot(sqpr,aes(©W¼Æ,price,fill=id))+geom_point(shape=23)+scale_fill_discrete(name="¿¤¥«",labels=¿¤¥«)
+ggplot(taiwan,aes(id,fill=Á`¼Ó¼h¼Æ))+geom_histogram(stat = "count",position = "fill")+labs(x="¿¤¥«",y="¼Ó¼h¼Æ¤ñ¨Ò")+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),labels=c("0%","25%","50%","75%","100%"))
+ggplot(pricedf,aes(¿¤¥«,©Ğ»ù,fill=ann))+geom_col(position = "dodge")
+ggplot(tradesum,aes(¿¤¥«,sum))+geom_col()+labs(y="¥ó¼Æ")
+
+}
+
+setwd("C:/Users/user/Documents/real-estate/108-2")
+
+taiwan <- adply(105:109,.margins = 1,.fun=readyear)[-1]
 
 setwd("..")
 taiwanmap<-readShapeSpatial("twmapdata/TOWN_MOI_1090324.shp")        #readshpfile
@@ -206,7 +243,7 @@ taiwanmap<-readShapeSpatial("twmapdata/TOWN_MOI_1090324.shp")        #readshpfil
 # taiwanmap$COUNTYNAME<- iconv(taiwanmap$COUNTYNAME,from = "UTF-8", to ="CP950")  
 #create a df include countyid & county name
 
-#table(substr(taiwan$äº¤æ˜“å¹´æœˆæ—¥,1,4))
+#table(substr(taiwan$¥æ©ö¦~¤ë¤é,1,4))
 #plot the three maps
 #grid.arrange(plotmap(taiwan,"mean"),
 #             plotmap(taiwan,"min"),
