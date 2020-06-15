@@ -6,7 +6,18 @@ library(plyr)
 library(RColorBrewer)
 library(gridExtra)
 library(dplyr)
+library(readxl)
 
+readPopulation<- function(year)
+{
+  path<-paste("population/",year,".xls",sep = "")
+  population<-read_xls(path,sheet = 1)[-2:-1,]
+  colnames(population)<-c("name","戶數","population","male","female")
+  population[3]<-as.numeric(population$population)
+  a<-substr(population$name[2],4,4)
+  population[1]<-gsub(a,"",population$name)
+  return(population)
+}
 ReadFile<-function(i)
 {
   filename<-paste(LETTERS[i],"_lvr_land_A.csv",sep="")
@@ -81,23 +92,15 @@ taiwan[6]<-as.Date(taiwan[[6]])
 return(na.omit(taiwan))
 }
 
-plotmap<-function(taiwan,choosemap)
-{
-  setwd("~/real-estate")
-  #read shp file and use the county region
-  taiwanmap<-readShapeSpatial("twmapdata/TOWN_MOI_1090324.shp")        #readshpfile
-  
-  #transform the encoding
-  taiwanmap$TOWNNAME<- iconv(taiwanmap$TOWNNAME,from = "UTF-8", to ="CP950")  
-  taiwanmap$COUNTYNAME<- iconv(taiwanmap$COUNTYNAME,from = "UTF-8", to ="CP950")  
-  #create a df include countyid & county name
-  NameIdTable <- data.frame(id = taiwanmap$COUNTYID,
-                            name = taiwanmap$COUNTYNAME,
-                            stringsAsFactors = F)  
-  NameIdTable<-unique(NameIdTable)
+plotmap<-function(taiwan=taiwan,taiwanmap=taiwanmap,choosemap,year=106)
+{ 
   
   taiwanmap.county<-fortify(taiwanmap,region = "COUNTYID")  #transform shpdf to df
   #remove the Spratly Islands and Pratas Island
+  NameIdTable <- data.frame(id = taiwanmap$COUNTYID,
+                            name = taiwanmap$COUNTYNAME,
+                            stringsAsFactors = F)  
+  NameIdTable<-unique(NameIdTable)  #delete 
   x<-which(taiwanmap.county$lat<=20)
   taiwanmap.county<-taiwanmap.county[-x,]
   
@@ -152,7 +155,7 @@ plotmap<-function(taiwan,choosemap)
   priceMin<-ddply(taiwan,.(id),summarise,min=min(PricePerSqrtm,na.rm = T))
   
   min_plot<-left_join(NameIdTable,priceMin,by= "id")
-  minPlot<-inner_join(taiwanmap.county,min_plot,by="id",all.min_plot=T)
+  minPlot<-inner_join(taiwanmap.county,min_plot,by="id")
   priceMinMap<-ggplot()+geom_polygon(data = minPlot,
                                      aes(x=long,
                                          y=lat,
@@ -167,11 +170,41 @@ plotmap<-function(taiwan,choosemap)
     labs(title = "min price of the real estate")
   return(priceMinMap)
   }
+  #population map
+  else if (choosemap=="population")
+  {
+  population<-readPopulation(107)
+  population_plot<-right_join(population,NameIdTable,by="name")
+  populationPlot<-right_join(population_plot,taiwanmap.county,by="id")
+  options(scipen = 999) #不自動轉轉科學記號
+    populationMap<-ggplot()+geom_polygon(data = populationPlot,
+                                     aes(x=long,
+                                         y=lat,
+                                         group=group,
+                                         fill=population),
+                                     color="black",
+                                     size=0.25)+
+    scale_fill_gradientn(
+      colours = brewer.pal(9,"Reds"))+
+    theme_void()+
+    coord_map()+
+    labs(title = "population of taiwan county")
+  return(populationMap)
+  }
+  
+  
 }
 
-setwd("~/real-estate/108-2")
+setwd("~/downloads/real-estate/108-2")
 
-taiwan <- adply(103:109,.margins = 1,.fun=readyear)[-1]
+taiwan <- adply(105,.margins = 1,.fun=readyear)[-1]
+
+setwd("..")
+taiwanmap<-readShapeSpatial("twmapdata/TOWN_MOI_1090324.shp")        #readshpfile
+#transform the encoding
+# taiwanmap$TOWNNAME<- iconv(taiwanmap$TOWNNAME,from = "UTF-8", to ="CP950")  
+# taiwanmap$COUNTYNAME<- iconv(taiwanmap$COUNTYNAME,from = "UTF-8", to ="CP950")  
+#create a df include countyid & county name
 
 #table(substr(taiwan$交易年月日,1,4))
 #plot the three maps
