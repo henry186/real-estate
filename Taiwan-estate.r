@@ -43,8 +43,7 @@ ReadAllFile <- function(i,year)
 readyear<-function(year)
 {
 taiwan<-adply(1:4,.margins = 1,.fun = ReadAllFile,year=year)
-taiwan<-taiwan%>%filter(交易標的=="房地(土地+建物)"|交易標的=="房地(土地+建物)+車位"|
-                              交易標的=="建物")
+
 taiwan <-taiwan[c(2 , 3 , 24 , 25 , 4 , 10 , 17 , 11 , 12 , 13 , 14 ,
                   15 , 18 , 19 , 20 , 21 , 22 , 23 , 26 , 27 , 28)]
 
@@ -56,9 +55,27 @@ taiwan[6]<- as.numeric(taiwan[[6]])+19110000
 taiwan[7]<- as.numeric(taiwan[[7]])+19110000
 taiwan[13]<-as.numeric(taiwan[[13]])
 
+
+taiwan<-taiwan%>%filter(交易標的=="房地(土地+建物)"
+                            |交易標的=="房地(土地+建物)+車位"
+                            |交易標的=="建物")
+taiwan<-taiwan%>%filter(交易年月日>=20140101)
+taiwan<-taiwan%>%filter(主要用途=="住宅"
+                            |主要用途=="住宅用"
+                            |主要用途=="住房"
+                            |主要用途=="住家用"
+                            |主要用途=="住商用"
+                            |主要用途=="住工用"
+                            |主要用途=="見其他登記事項"
+                            |主要用途=="見其它登記事項"
+                            |主要用途=="店舖、住宅"
+                            |主要用途=="國民住宅"
+                            |主要用途=="集合住宅")
+
 #transfirm to class date
 a<-taiwan$交易年月日
-taiwan$交易年月日<-paste(substr(a,1,4),substr(a,5,6),substr(a,7,8),sep="-")
+taiwan$交易年月日<-paste(substr(a,1,4),substr(a,5,6)
+                    ,substr(a,7,8),sep="-")
 taiwan[6]<-as.Date(taiwan[[6]])
 
 return(na.omit(taiwan))
@@ -154,8 +171,9 @@ plotmap<-function(taiwan,choosemap)
 
 setwd("~/real-estate/108-2")
 
-taiwan <- adply(108,.margins = 1,.fun=readyear)
+taiwan <- adply(103:109,.margins = 1,.fun=readyear)[-1]
 
+#table(substr(taiwan$交易年月日,1,4))
 #plot the three maps
 #grid.arrange(plotmap(taiwan,"mean"),
 #             plotmap(taiwan,"min"),
