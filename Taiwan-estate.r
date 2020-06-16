@@ -236,21 +236,56 @@ sqpr <- data.frame("id"=taiwan$id, "price"=taiwan$PricePerSqrtm ,"坪數"=sqrtm)
 sqpr <- sqpr%>%filter(坪數<8000)
 sqpr <- sqpr%>%filter(price<400000)
 anprice<- c(priceMean$mean,priceMax$max,priceMin$min)
-pricedf<- data.frame("縣市"=rep(縣市,times=3),"房價"=anprice,"ann"=c(rep("Mean",times=22),rep("Max",times=22),rep("Min",times=22)))
+pricedf<- data.frame("縣市"=rep(縣市,times=3),"房價"=anprice
+                     ,"ann"=c(rep("Mean",times=22),rep("Max",times=22),rep("Min",times=22)))
 
-meanPricePlot<-ggplot(priceMean,aes(mean,縣市))+geom_col(position = "dodge")+labs(x="每平方公尺平均價格")
-tradeThingPlot<-ggplot(houseuse,aes(price,fill=交易標的))+geom_histogram(stat = "count",position = "fill")+labs(x="每平方公尺價格",y="交易標的比例")+xlim(0,400000)+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),labels=c("0%","25%","50%","75%","100%"))
-areaPlot<-ggplot(sqpr,aes(坪數,price,fill=id))+geom_point(shape=23)+scale_fill_discrete(name="縣市",labels=縣市)
-floorPlot<-ggplot(taiwan,aes(id,fill=總樓層數))+geom_histogram(stat = "count",position = "fill")+labs(x="縣市",y="樓層數比例")+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),labels=c("0%","25%","50%","75%","100%"))
-pircePlot<-ggplot(pricedf,aes(縣市,房價,fill=ann))+geom_col(position = "dodge")
+meanPricePlot<-ggplot(priceMean,aes(mean,縣市))+
+  geom_col(position = "dodge")+labs(x="每平方公尺平均價格")
+
+tradeThingPlot<-ggplot(houseuse,aes(price,fill=交易標的))+
+  geom_histogram(stat = "count",position = "fill")+
+  labs(x="每平方公尺價格",y="交易標的比例")+
+  xlim(0,400000)+
+  scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),
+                     labels=c("0%","25%","50%","75%","100%"))
+
+areaPlot<-ggplot(sqpr,aes(坪數,price,fill=id))+
+  geom_point(shape=23)+scale_fill_discrete(name="縣市",labels=縣市)
+
+floorPlot<-ggplot(taiwan,aes(id,fill=總樓層數))+
+  geom_histogram(stat = "count",position = "fill")+
+  labs(x="縣市",y="樓層數比例")+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),
+                                            labels=c("0%","25%","50%","75%","100%"))
+
+mmmpircePlot<-ggplot(pricedf,aes(縣市,房價,fill=ann))+
+  geom_col(position = "dodge")
+
 numbersPlot<-ggplot(tradesum,aes(縣市,sum))+geom_col()+labs(y="件數")
+
+
+
+
+manage<-ddply(taiwan[taiwan$有無管理組織=="有",],.(id),summarize
+              ,mean = round(mean(PricePerSqrtm,na.rm = T)))
+notManage<-ddply(taiwan[taiwan$有無管理組織=="無",],.(id),summarize
+              ,mean = round(mean(PricePerSqrtm,na.rm = T)))
+county<-data.frame(name=縣市,id=unique(taiwan$id))
+manage<-cbind(manage,manage="有")
+notManage<-cbind(notManage,manage="無")
+p<-rbind(manage,notManage)
+p<-inner_join(county,p,by="id")
+managePlot<-ggplot(p,aes(name,mean,fill=manage))+
+  geom_col(position = "dodge")
+
+
+
 
 switch(y,
        return(meanPricePlot),
        return(tradeThingPlot),
        return(areaPlot),
        return(floorPlot),
-       return(pircePlot),
+       return(mmmpircePlot),
        return(numbersPlot),
 )
 }
