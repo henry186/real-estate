@@ -8,27 +8,37 @@ library(gridExtra)
 library(dplyr)
 library(readxl)
 
+
 readPopulation<- function(year)
 {
   path<-paste("population/",year,".xls",sep = "")
   population<-read_xls(path,sheet = 1)[-2:-1,]
-  colnames(population)<-c("name","?埗?暩","population","male","female")
+  colnames(population)<-c("name","household","population","male","female")
   population[3]<-as.numeric(population$population)
   a<-substr(population$name[2],4,4)
   population[1]<-gsub(a,"",population$name)
   return(population)
 }
+
+readIncome <-function()
+{
+  income<-read_excel("105-107income.xlsx",sheet=1)
+  income<- cbind(year = rep(105:107,each=21),income)
+  return(income)
+}
+
+#read one csv file
 ReadFile<-function(i)
 {
   filename<-paste(LETTERS[i],"_lvr_land_A.csv",sep="")
   if(file.exists(filename))
   {
-    
     x<-read.table(filename,header = T,sep=",",
                   quote = "",
                   row.names = NULL,
                   fill= T,fileEncoding="UTF-8-BOM",
                   stringsAsFactors = F)
+    
     x<-x[-1,]
     cat(sprintf("read file %s\n",filename))
     return(cbind(id=LETTERS[i],x))
@@ -36,6 +46,7 @@ ReadFile<-function(i)
   
 }
 
+#read all csvfile in a directorty
 ReadAllFile <- function(i,year)
 {
   path<-paste("../",year,"-",i,sep = "")
@@ -50,69 +61,76 @@ ReadAllFile <- function(i,year)
     
 }
 
-#read estate data and clean up the data
+#read a year of estate data and clean up the data
 readyear<-function(year)
 {
-taiwan<-adply(1:4,.margins = 1,.fun = ReadAllFile,year=year)
+  taiwan<-adply(1:4,.margins = 1,.fun = ReadAllFile,year=year)
+  taiwan <-taiwan[c(2, 3 ,24 ,25 ,18, 4, 10, 17 ,11 , 12, 13 ,14 ,
+                  15, 19 ,20 ,21 ,22 ,23)]
 
-taiwan <-taiwan[c(2 , 3 , 24 , 25 , 4 , 10 , 17 , 11 , 12 , 13 , 14 ,
-                  15 , 18 , 19 , 20 , 21 , 22 , 23 , 26 , 27 , 28)]
+  colnames(taiwan)[c(2,4)]<-c("townname","PricePerSqrtm")
+  taiwan[3]<- as.numeric(taiwan[[3]])
+  taiwan[4]<- as.numeric((taiwan[[4]]))
+  taiwan[7]<- as.numeric(taiwan[[7]])+19110000
+  taiwan[8]<- as.numeric(taiwan[[8]])+19110000
 
-colnames(taiwan)[c(2,4)]<-c("name","PricePerSqrtm")
-
-taiwan[3]<- as.numeric(taiwan[[3]])
-taiwan[4]<- as.numeric((taiwan[[4]]))
-taiwan[6]<- as.numeric(taiwan[[6]])+19110000
-taiwan[7]<- as.numeric(taiwan[[7]])+19110000
-taiwan[13]<-as.numeric(taiwan[[13]])
-
-
-taiwan<-taiwan%>%filter(ユ夹=="┬(+)"
-                            |ユ夹=="┬(+)+ó"
-                            |ユ夹=="")
-taiwan<-taiwan%>%filter(ユるら>=20140101)
-taiwan<-taiwan%>%filter(璶ノ硚==""
-                            |璶ノ硚=="ノ"
-                            |璶ノ硚=="┬"
-                            |璶ノ硚=="產ノ"
-                            |璶ノ硚=="坝ノ"
-                            |璶ノ硚=="ノ"
-                            |璶ノ硚=="ǎㄤ祅癘ㄆ兜"
-                            |璶ノ硚=="ǎㄤウ祅癘ㄆ兜"
-                            |璶ノ硚=="┍鏓"
-                            |璶ノ硚=="瓣チ"
-                            |璶ノ硚=="栋")
-taiwan<-taiwan%>%filter(taiwan$瞷猵Ы.┬!="0")
-taiwan<-taiwan%>%filter(taiwan$PricePerSqrtm!=0)
-taiwan<-taiwan%>%filter(taiwan$羆加糷计!=""
-                        &taiwan$羆加糷计!="(フ)"
-                        &taiwan$羆加糷计!="000"
-                        &taiwan$羆加糷计!="043"
-                        &taiwan$羆加糷计!="ǎㄏノ磅酚"
-                        &taiwan$羆加糷计!="ǎㄤ祅癘ㄆ兜")
-                       
+  taiwan<-taiwan%>%filter(ユるら>=20140101)
+  taiwan<-taiwan%>%filter(taiwan$PricePerSqrtm!=0)
+  taiwan<-taiwan%>%filter(ユ夹=="┬(+)"
+                              |ユ夹=="┬(+)+ó"
+                              |ユ夹=="")
+  taiwan<-taiwan%>%filter(璶ノ硚==""
+                              |璶ノ硚=="ノ"
+                              |璶ノ硚=="┬"
+                              |璶ノ硚=="產ノ"
+                              |璶ノ硚=="坝ノ"
+                              |璶ノ硚=="ノ"
+                              |璶ノ硚=="ǎㄤ祅癘ㄆ兜"
+                              |璶ノ硚=="ǎㄤウ祅癘ㄆ兜"
+                              |璶ノ硚=="┍鏓"
+                              |璶ノ硚=="瓣チ"
+                              |璶ノ硚=="栋")
+  taiwan<-taiwan%>%filter(taiwan$瞷猵Ы.┬!="0")
+  taiwan<-taiwan%>%filter(taiwan$羆加糷计!=""
+                          &taiwan$羆加糷计!="(フ)"
+                          &taiwan$羆加糷计!="000"
+                          &taiwan$羆加糷计!="043"
+                          &taiwan$羆加糷计!="ǎㄏノ磅酚"
+                          &taiwan$羆加糷计!="ǎㄤ祅癘ㄆ兜")
 
 #transfirm to class date
-a<-taiwan$ユるら
-taiwan$ユるら<-paste(substr(a,1,4),substr(a,5,6)
-                    ,substr(a,7,8),sep="-")
-taiwan[6]<-as.Date(taiwan[[6]])
+#  a<-taiwan$ユるら
+#  taiwan$ユるら<-paste(substr(a,1,4),substr(a,5,6)
+#                    ,substr(a,7,8),sep="-")
+#  taiwan$ユるら<-as.Date(taiwan$ユるら)
+#
+ # a<-taiwan$縱ЧΘる
+  #taiwan$縱ЧΘる<-paste(substr(a,1,4),substr(a,5,6)
+   #                  ,substr(a,7,8),sep="-")
+  #taiwan$縱ЧΘる<-as.Date(taiwan$縱ЧΘる)
 
-return(na.omit(taiwan))
+  return(na.omit(taiwan))
 }
 
-plotmap<-function(taiwan=taiwan,taiwanmap=taiwanmap,choosemap,year=106)
+plotmap<-function(taiwan=taiwan,choosemap,year=109)
 { 
   
+  taiwanmap<-readShapeSpatial("twmapdata/TOWN_MOI_1090324.shp")        #readshpfile
+  
   taiwanmap.county<-fortify(taiwanmap,region = "COUNTYID")  #transform shpdf to df
+  
+  
+  #transform the encoding
+  taiwanmap$COUNTYNAME<- iconv(taiwanmap$COUNTYNAME,from = "UTF-8", to ="CP950")  
+  
   #remove the Spratly Islands and Pratas Island
   NameIdTable <- data.frame(id = taiwanmap$COUNTYID,
                             name = taiwanmap$COUNTYNAME,
                             stringsAsFactors = F)  
-  NameIdTable<-unique(NameIdTable)  #delete 
+  NameIdTable<-unique(NameIdTable)  #delete repeat rows
   x<-which(taiwanmap.county$lat<=20)
   taiwanmap.county<-taiwanmap.county[-x,]
-  
+  options(scipen = 999)
   if(choosemap=="mean")
   {
   #meanplot
@@ -182,10 +200,10 @@ plotmap<-function(taiwan=taiwan,taiwanmap=taiwanmap,choosemap,year=106)
   #population map
   else if (choosemap=="population")
   {
-  population<-readPopulation(107)
+  population<-readPopulation(year)
   population_plot<-right_join(population,NameIdTable,by="name")
   populationPlot<-right_join(population_plot,taiwanmap.county,by="id")
-  options(scipen = 999) 
+   
     populationMap<-ggplot()+geom_polygon(data = populationPlot,
                                      aes(x=long,
                                          y=lat,
@@ -193,18 +211,15 @@ plotmap<-function(taiwan=taiwan,taiwanmap=taiwanmap,choosemap,year=106)
                                          fill=population),
                                      color="black",
                                      size=0.25)+
-    scale_fill_gradientn(
-      colours = brewer.pal(9,"Reds"))+
     theme_void()+
     coord_map()+
-    labs(title = "population of taiwan county")
+    labs(title = "county name")
   return(populationMap)
   }
   
-  
 }
 
-drawan <- function(){
+drawn <- function(y){
 
 priceMean<-ddply(taiwan,.(id),summarize,mean = round(mean(PricePerSqrtm,na.rm = T)))
 priceMax<-ddply(taiwan,.(id),summarise,max=max(PricePerSqrtm,na.rm = T))
@@ -223,29 +238,35 @@ sqpr <- sqpr%>%filter(price<400000)
 anprice<- c(priceMean$mean,priceMax$max,priceMin$min)
 pricedf<- data.frame("郡カ"=rep(郡カ,times=3),"┬基"=anprice,"ann"=c(rep("Mean",times=22),rep("Max",times=22),rep("Min",times=22)))
 
-ggplot(priceMean,aes(mean,郡カ))+geom_col(position = "dodge")+labs(x="–キよそへキА基")
-ggplot(houseuse,aes(price,fill=ユ夹))+geom_histogram(stat = "count",position = "fill")+labs(x="–キよそへ基",y="ユ夹ゑㄒ")+xlim(0,400000)+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),labels=c("0%","25%","50%","75%","100%"))
-ggplot(sqpr,aes(￤计,price,fill=id))+geom_point(shape=23)+scale_fill_discrete(name="郡カ",labels=郡カ)
-ggplot(taiwan,aes(id,fill=羆加糷计))+geom_histogram(stat = "count",position = "fill")+labs(x="郡カ",y="加糷计ゑㄒ")+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),labels=c("0%","25%","50%","75%","100%"))
-ggplot(pricedf,aes(郡カ,┬基,fill=ann))+geom_col(position = "dodge")
-ggplot(tradesum,aes(郡カ,sum))+geom_col()+labs(y="ン计")
+meanPricePlot<-ggplot(priceMean,aes(mean,郡カ))+geom_col(position = "dodge")+labs(x="–キよそへキА基")
+tradeThingPlot<-ggplot(houseuse,aes(price,fill=ユ夹))+geom_histogram(stat = "count",position = "fill")+labs(x="–キよそへ基",y="ユ夹ゑㄒ")+xlim(0,400000)+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),labels=c("0%","25%","50%","75%","100%"))
+areaPlot<-ggplot(sqpr,aes(￤计,price,fill=id))+geom_point(shape=23)+scale_fill_discrete(name="郡カ",labels=郡カ)
+floorPlot<-ggplot(taiwan,aes(id,fill=羆加糷计))+geom_histogram(stat = "count",position = "fill")+labs(x="郡カ",y="加糷计ゑㄒ")+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),labels=c("0%","25%","50%","75%","100%"))
+pircePlot<-ggplot(pricedf,aes(郡カ,┬基,fill=ann))+geom_col(position = "dodge")
+numbersPlot<-ggplot(tradesum,aes(郡カ,sum))+geom_col()+labs(y="ン计")
 
+switch(y,
+       return(meanPricePlot),
+       return(tradeThingPlot),
+       return(areaPlot),
+       return(floorPlot),
+       return(pircePlot),
+       return(numbersPlot),
+)
 }
 
-setwd("C:/Users/user/Documents/real-estate/108-2")
+plotAllMap<-function()
+{
+  grid.arrange(plotmap(taiwan,"mean"),
+               plotmap(taiwan,"max"),
+               plotmap(taiwan,"population"),
+               nrow = 2)
+}
+
+setwd("~/real-estate/108-2")
 
 taiwan <- adply(105:109,.margins = 1,.fun=readyear)[-1]
 
 setwd("..")
-taiwanmap<-readShapeSpatial("twmapdata/TOWN_MOI_1090324.shp")        #readshpfile
-#transform the encoding
-# taiwanmap$TOWNNAME<- iconv(taiwanmap$TOWNNAME,from = "UTF-8", to ="CP950")  
-# taiwanmap$COUNTYNAME<- iconv(taiwanmap$COUNTYNAME,from = "UTF-8", to ="CP950")  
-#create a df include countyid & county name
 
-#table(substr(taiwan$ユるら,1,4))
-#plot the three maps
-#grid.arrange(plotmap(taiwan,"mean"),
-#             plotmap(taiwan,"min"),
-#             plotmap(taiwan,"max"),
-#             nrow = 2)
+
