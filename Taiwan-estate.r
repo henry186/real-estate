@@ -20,13 +20,6 @@ readPopulation<- function(year)
   return(population)
 }
 
-readIncome <-function()
-{
-  income<-read_excel("105-107income.xlsx",sheet=1)
-  income<- cbind(year = rep(105:107,each=21),income)
-  return(income)
-}
-
 #read one csv file
 ReadFile<-function(i)
 {
@@ -52,13 +45,13 @@ ReadAllFile <- function(i,year)
   path<-paste("../",year,"-",i,sep = "")
   if(file.exists(path))
   {
-  setwd(path)
-  cat("file1",year,"-",i,"\n")
-  return(adply(1:26,.margins = 1,.fun = ReadFile))
+    setwd(path)
+    cat("file1",year,"-",i,"\n")
+    return(adply(1:26,.margins = 1,.fun = ReadFile))
   }
   else
     cat(year,"-",i,"doesn't exsist\n")
-    
+  
 }
 
 #read a year of estate data and clean up the data
@@ -66,14 +59,14 @@ readyear<-function(year)
 {
   taiwan<-adply(1:4,.margins = 1,.fun = ReadAllFile,year=year)
   taiwan <-taiwan[c(2, 3 ,24 ,25 ,18, 4, 10, 17 ,11 , 12, 13 ,14 ,
-                  15, 19 ,20 ,21 ,22 ,23)]
-
+                    15, 19 ,20 ,21 ,22 ,23)]
+  
   colnames(taiwan)[c(2,4)]<-c("townname","PricePerSqrtm")
   taiwan[3]<- as.numeric(taiwan[[3]])
   taiwan[4]<- as.numeric((taiwan[[4]]))
   taiwan[7]<- as.numeric(taiwan[[7]])+19110000
   taiwan[8]<- as.numeric(taiwan[[8]])+19110000
-
+  
   taiwan<-taiwan%>%filter(交易年月日>=20140101)
   taiwan<-taiwan%>%filter(taiwan$PricePerSqrtm!=0)
   taiwan<-taiwan%>%filter(交易標的=="房地(土地+建物)"
@@ -97,22 +90,22 @@ readyear<-function(year)
                           &taiwan$總樓層數!="043"
                           &taiwan$總樓層數!="見使用執照"
                           &taiwan$總樓層數!="見其他登記事項")
-
-#transfirm to class date
-#  a<-taiwan$交易年月日
-#  taiwan$交易年月日<-paste(substr(a,1,4),substr(a,5,6)
-#                    ,substr(a,7,8),sep="-")
-#  taiwan$交易年月日<-as.Date(taiwan$交易年月日)
-#
- # a<-taiwan$建築完成年月
+  
+  #transfirm to class date
+  #  a<-taiwan$交易年月日
+  #  taiwan$交易年月日<-paste(substr(a,1,4),substr(a,5,6)
+  #                    ,substr(a,7,8),sep="-")
+  #  taiwan$交易年月日<-as.Date(taiwan$交易年月日)
+  #
+  # a<-taiwan$建築完成年月
   #taiwan$建築完成年月<-paste(substr(a,1,4),substr(a,5,6)
-   #                  ,substr(a,7,8),sep="-")
+  #                  ,substr(a,7,8),sep="-")
   #taiwan$建築完成年月<-as.Date(taiwan$建築完成年月)
-
+  
   return(na.omit(taiwan))
 }
 
-plotmap<-function(taiwan=taiwan,choosemap,year=109)
+plotmap<-function(choosemap,year=109)
 { 
   
   taiwanmap<-readShapeSpatial("twmapdata/TOWN_MOI_1090324.shp")        #readshpfile
@@ -133,94 +126,96 @@ plotmap<-function(taiwan=taiwan,choosemap,year=109)
   options(scipen = 999)
   if(choosemap=="mean")
   {
-  #meanplot
-  #calculate the avg of price/squaremeters
-  priceMean<-ddply(taiwan,.(id),summarize,mean = round(mean(PricePerSqrtm,na.rm = T)))
-  mean_plot<-right_join(priceMean,NameIdTable,by= "id")
-  meanPlot<-inner_join(taiwanmap.county,mean_plot,by="id")
-  priceMeanMap<-ggplot()+geom_polygon(data = meanPlot,
-                                      aes(x=long,
-                                          y=lat,
-                                          group=group,
-                                          fill=mean),
-                                      color="black",
-                                      size=0.25)+
-    scale_fill_gradientn(
-      colours = brewer.pal(9,"Reds"))+
-    theme_void()+
-    coord_map()+
-    labs(title = "mean price of the real estate")
-  return(priceMeanMap)
+    #meanplot
+    #calculate the avg of price/squaremeters
+    priceMean<-ddply(taiwan,.(id),summarize,mean = round(mean(PricePerSqrtm,na.rm = T)))
+    mean_plot<-right_join(priceMean,NameIdTable,by= "id")
+    meanPlot<-inner_join(taiwanmap.county,mean_plot,by="id")
+    priceMeanMap<-ggplot()+geom_polygon(data = meanPlot,
+                                        aes(x=long,
+                                            y=lat,
+                                            group=group,
+                                            fill=mean),
+                                        color="black",
+                                        size=0.25)+
+      scale_fill_gradientn(
+        colours = brewer.pal(9,"Reds"))+
+      theme_void()+
+      coord_map()+
+      labs(title = "mean price of the real estate")
+    return(priceMeanMap)
   }
   else if(choosemap=="max")
   {
-  #maxplot
-  #calculate the max value of price/square meters
-  
-  priceMax<-ddply(taiwan,.(id),summarise,max=max(PricePerSqrtm,na.rm = T))
-  max_plot<-left_join(NameIdTable,priceMax,by= "id")
-  
-  maxPlot<-inner_join(taiwanmap.county,max_plot,by="id")
-  priceMaxMap<-ggplot()+geom_polygon(data = maxPlot,
-                                     aes(x=long,
-                                         y=lat,
-                                         group=group,
-                                         fill=max),
-                                     color="black",
-                                     size=0.25)+
-    scale_fill_gradientn(
-      colours = brewer.pal(9,"Reds"))+
-    theme_void()+
-    coord_map()+
-    labs(title = "max price of the real estate")
-  return(priceMaxMap)
+    #maxplot
+    #calculate the max value of price/square meters
+    
+    priceMax<-ddply(taiwan,.(id),summarise,max=max(PricePerSqrtm,na.rm = T))
+    max_plot<-left_join(NameIdTable,priceMax,by= "id")
+    
+    maxPlot<-inner_join(taiwanmap.county,max_plot,by="id")
+    priceMaxMap<-ggplot()+geom_polygon(data = maxPlot,
+                                       aes(x=long,
+                                           y=lat,
+                                           group=group,
+                                           fill=max),
+                                       color="black",
+                                       size=0.25)+
+      scale_fill_gradientn(
+        colours = brewer.pal(9,"Reds"))+
+      theme_void()+
+      coord_map()+
+      labs(title = "max price of the real estate")
+    return(priceMaxMap)
   }
   else if(choosemap=="min")
   {
-  #minplot
-  #calculate the min value of price/square meters
-  priceMin<-ddply(taiwan,.(id),summarise,min=min(PricePerSqrtm,na.rm = T))
-  
-  min_plot<-left_join(NameIdTable,priceMin,by= "id")
-  minPlot<-inner_join(taiwanmap.county,min_plot,by="id")
-  priceMinMap<-ggplot()+geom_polygon(data = minPlot,
-                                     aes(x=long,
-                                         y=lat,
-                                         group=group,
-                                         fill=min),
-                                     color="black",
-                                     size=0.25)+
-    scale_fill_gradientn(
-      colours = brewer.pal(9,"Reds"))+
-    theme_void()+
-    coord_map()+
-    labs(title = "min price of the real estate")
-  return(priceMinMap)
+    #minplot
+    #calculate the min value of price/square meters
+    priceMin<-ddply(taiwan,.(id),summarise,min=min(PricePerSqrtm,na.rm = T))
+    
+    min_plot<-left_join(NameIdTable,priceMin,by= "id")
+    minPlot<-inner_join(taiwanmap.county,min_plot,by="id")
+    priceMinMap<-ggplot()+geom_polygon(data = minPlot,
+                                       aes(x=long,
+                                           y=lat,
+                                           group=group,
+                                           fill=min),
+                                       color="black",
+                                       size=0.25)+
+      scale_fill_gradientn(
+        colours = brewer.pal(9,"Reds"))+
+      theme_void()+
+      coord_map()+
+      labs(title = "min price of the real estate")
+    return(priceMinMap)
   }
   #population map
   else if (choosemap=="population")
   {
-  population<-readPopulation(year)
-  population_plot<-right_join(population,NameIdTable,by="name")
-  populationPlot<-right_join(population_plot,taiwanmap.county,by="id")
-   
+    population<-readPopulation(year)
+    population_plot<-right_join(population,NameIdTable,by="name")
+    populationPlot<-right_join(population_plot,taiwanmap.county,by="id")
+    
     populationMap<-ggplot()+geom_polygon(data = populationPlot,
-                                     aes(x=long,
-                                         y=lat,
-                                         group=group,
-                                         fill=population),
-                                     color="black",
-                                     size=0.25)+
-    theme_void()+
-    coord_map()+
-    labs(title = "county name")
-  return(populationMap)
+                                         aes(x=long,
+                                             y=lat,
+                                             group=group,
+                                             fill=population),
+                                         color="black",
+                                         size=0.25)+
+      scale_fill_gradientn(
+        colours = brewer.pal(9,"Reds"))+
+      theme_void()+
+      coord_map()+
+      labs(title = "county name")
+    return(populationMap)
   }
   
 }
 
 drawn <- function(y){
-
+  
   priceMean<-ddply(taiwan,.(id),summarize,mean = round(mean(PricePerSqrtm,na.rm = T)))
   priceMax<-ddply(taiwan,.(id),summarise,max=max(PricePerSqrtm,na.rm = T))
   priceMin<-ddply(taiwan,.(id),summarise,min=min(PricePerSqrtm,na.rm = T))
@@ -248,31 +243,25 @@ drawn <- function(y){
   yearMean<-ddply(houseyear,.(id),summarize,mean = round(mean(屋齡,na.rm = T)))
   yearMean<-data.frame(縣市,"pricemean"=priceMean$mean,"yearmean"=yearMean$mean)
   
-  ggplot(priceMean,aes(mean,縣市))+geom_col(position = "dodge")+labs(x="每平方公尺平均價格")+geom_text(aes(label=mean),vjust=0,color=I("blue"),size=5)
+  ggplot(yearMean,aes(yearmean,縣市))+geom_col()+
+    geom_text(aes(label=yearmean),
+              vjust=0,color=I("blue"),size=5)+labs(x="屋齡")
   
-  ggplot(sqpr,aes(坪數,price,fill=id))+geom_point(shape=23)+scale_fill_discrete(name="縣市",labels=縣市)+geom_hline(yintercept = allmeanps)+geom_vline(xintercept = allmeana)
+  a<-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201400,201412)+labs(y="平均房價")
+  b<-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201500,201512)+labs(y="平均房價")
+  c<-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201600,201612)+labs(y="平均房價")
+  d<-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201700,201712)+labs(y="平均房價")
+  e<-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201800,201812)+labs(y="平均房價")
+  f<-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201900,201912)+labs(y="平均房價")
+  tradeYMRelate<-grid.arrange(a,b,c,e,d,f,nrow=2)
   
-  ggplot(sqpr,aes(坪數,總價,fill=id))+geom_point(shape=23)+scale_fill_discrete(name="縣市",labels=縣市)+geom_hline(yintercept = allmeanp)+geom_vline(xintercept = allmeana)
-  
-  ggplot(taiwan,aes(id,fill=總樓層數))+geom_histogram(label=taiwan$交易年月日,stat = "count",position = "fill")+labs(x="縣市",y="樓層數比例")
-  
-  ggplot(tradesum,aes(縣市,sum))+geom_col()+labs(y="件數")
-  
-  ggplot(yearMean,aes(yearmean,縣市))+geom_col()+geom_text(aes(label=yearmean),vjust=0,color=I("blue"),size=5)+labs(x="屋齡")
-  
-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201400,201412)+labs(y="平均房價")
-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201500,201512)+labs(y="平均房價")
-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201600,201612)+labs(y="平均房價")
-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201700,201712)+labs(y="平均房價")
-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201800,201812)+labs(y="平均房價")
-  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201900,201912)+labs(y="平均房價")
- 
   aa<-cor(taiwan$PricePerSqrtm,as.numeric(taiwan$建物移轉總面積平方公尺))
-  plot(taiwan$PricePerSqrtm,as.numeric(taiwan$建物移轉總面積平方公尺), xlab="每平方公尺平均價格"
+  plot(taiwan$PricePerSqrtm,as.numeric(taiwan$建物移轉總面積平方公尺),
+       xlab="每平方公尺平均價格"
        ,ylab="建物轉移面積")
   abline(lm(as.numeric(taiwan$建物移轉總面積平方公尺)~taiwan$PricePerSqrtm),col="red")
   legend("topleft",legend=c("r=",aa))
- 
+  
   bb<-cor(taiwan$PricePerSqrtm,taiwan$總價元)
   plot(taiwan$PricePerSqrtm,taiwan$總價元, xlab="每平方公尺平均價格"
        ,ylab="總價元")
@@ -297,46 +286,78 @@ drawn <- function(y){
   abline(lm(yearMean$yearmean~yearMean$pricemean),col="red")
   legend("topleft",legend=c("r=",ee))
   
-
+  ff<-cor(taiwan$總價元,as.numeric(taiwan$建物移轉總面積平方公尺))
+  plot(taiwan$總價元,as.numeric(taiwan$建物移轉總面積平方公尺), xlab="總價元"
+       ,ylab="建物移轉總面積平方公尺")
+  abline(lm(as.numeric(taiwan$建物移轉總面積平方公尺)~taiwan$總價元),col="red")
+  legend("topleft",legend=c("r=",ff))
+  
+  
+  meanPricePlot<-ggplot(priceMean,aes(mean,縣市))+
+    geom_col(position = "dodge")+labs(x="每平方公尺平均價格")
+  
+  tradeThingPlot<-ggplot(houseuse,aes(price,fill=交易標的))+
+    geom_histogram(stat = "count",position = "fill")+
+    labs(x="每平方公尺價格",y="交易標的比例")+
+    xlim(0,400000)+
+    scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),
+                       labels=c("0%","25%","50%","75%","100%"))
+  
+  areaPlot<-ggplot(sqpr,aes(坪數,price,fill=id))+
+    geom_point(shape=23)+scale_fill_discrete(name="縣市",labels=縣市)
+  
+  floorPlot<-ggplot(taiwan,aes(id,fill=總樓層數))+
+    geom_histogram(stat = "count",position = "fill")+
+    labs(x="縣市",y="樓層數比例")+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),
+                                              labels=c("0%","25%","50%","75%","100%"))
+  
+  mmmpircePlot<-ggplot(pricedf,aes(縣市,房價,fill=ann))+
+    geom_col(position = "dodge")
+  
+  numbersPlot<-ggplot(tradesum,aes(縣市,sum))+geom_col()+labs(y="件數")
   
   
   
   
+  manage<-ddply(taiwan[taiwan$有無管理組織=="有",],.(id),summarize
+                ,mean = round(mean(PricePerSqrtm,na.rm = T)))
+  notManage<-ddply(taiwan[taiwan$有無管理組織=="無",],.(id),summarize
+                   ,mean = round(mean(PricePerSqrtm,na.rm = T)))
+  county<-data.frame(name=縣市,id=unique(taiwan$id))
+  manage<-cbind(manage,manage="有")
+  notManage<-cbind(notManage,manage="無")
+  p<-rbind(manage,notManage)
+  p<-inner_join(county,p,by="id")
+  managePlot<-ggplot(p,aes(name,mean,fill=manage))+
+    geom_col(position = "dodge")
   
-manage<-ddply(taiwan[taiwan$有無管理組織=="有",],.(id),summarize
-              ,mean = round(mean(PricePerSqrtm,na.rm = T)))
-notManage<-ddply(taiwan[taiwan$有無管理組織=="無",],.(id),summarize
-              ,mean = round(mean(PricePerSqrtm,na.rm = T)))
-county<-data.frame(name=縣市,id=unique(taiwan$id))
-manage<-cbind(manage,manage="有")
-notManage<-cbind(notManage,manage="無")
-p<-rbind(manage,notManage)
-p<-inner_join(county,p,by="id")
-managePlot<-ggplot(p,aes(name,mean,fill=manage))+
-  geom_col(position = "dodge")
-
-
-
-
-switch(y,
-       return(meanPricePlot),
-       return(tradeThingPlot),
-       return(areaPlot),
-       return(floorPlot),
-       return(mmmpircePlot),
-       return(numbersPlot),
-)
+  population<-readPopulation(109)
+  p<-right_join(population,county,by="name")
+  populationPlot<-ggplot(p,aes(name,population))+
+    geom_col()
+  
+  
+  switch(y,
+         return(meanPricePlot), #1
+         return(tradeThingPlot), #2
+         return(areaPlot), #3
+         return(floorPlot), #4
+         return(mmmpircePlot), #5
+         return(numbersPlot), #6
+         return(managePlot), #7
+         return(populationPlot), #8
+         return(tradeYMRelate) #9
+  )
 }
 
-plotAllMap<-function()
+plotMeanPopulationMap<-function()
 {
   grid.arrange(plotmap(taiwan,"mean"),
-               plotmap(taiwan,"max"),
                plotmap(taiwan,"population"),
                nrow = 2)
 }
 
-setwd("C:/Users/user/Documents/real-estate/108-2")
+setwd("~/real-estate/108-2")
 
 taiwan <- adply(105:109,.margins = 1,.fun=readyear)[-1]
 
