@@ -292,6 +292,12 @@ drawn <- function(y){
   abline(lm(as.numeric(taiwan$簿锣羆縩キよそへ)~taiwan$羆基じ),col="red")
   legend("topleft",legend=c("r=",ff))
   
+  gg<-cor(population$population[2:23],priceMean$mean)
+  plot(population$population[2:23],priceMean$mean, xlab="计"
+       ,ylab="キА基")
+  abline(lm(priceMean$mean~population$population[2:23]),col="red")
+  legend("topleft",legend=c("r=",gg))
+  
   
   meanPricePlot<-ggplot(priceMean,aes(mean,郡カ))+
     geom_col(position = "dodge")+labs(x="–キよそへキА基")
