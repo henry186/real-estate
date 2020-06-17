@@ -221,50 +221,88 @@ plotmap<-function(taiwan=taiwan,choosemap,year=109)
 
 drawn <- function(y){
 
-priceMean<-ddply(taiwan,.(id),summarize,mean = round(mean(PricePerSqrtm,na.rm = T)))
-priceMax<-ddply(taiwan,.(id),summarise,max=max(PricePerSqrtm,na.rm = T))
-priceMin<-ddply(taiwan,.(id),summarise,min=min(PricePerSqrtm,na.rm = T))
-tradesum<-ddply(taiwan,.(id),summarise,sum=sum(PricePerSqrtm!=0,na.rm = T))
-縣市 <-c("臺北市","臺中市","基隆市","臺南市","高雄市","新北市","宜蘭縣","桃園市","嘉義市","新竹縣","苗栗縣","南投縣","彰化縣","新竹市","雲林縣","嘉義縣","屏東縣","花蓮縣","臺東縣","金門縣","澎湖縣","連江縣") 
-priceMean <- data.frame("縣市"=縣市,priceMean)
-priceMax <- data.frame("縣市"=縣市,priceMax)
-priceMin <- data.frame("縣市"=縣市,priceMin)
-tradesum <- data.frame("縣市"=縣市,tradesum)
-houseuse <- data.frame("price"=round(taiwan$PricePerSqrtm,-4),"交易標的"=taiwan$交易標的)
-sqrtm <- round(taiwan$總價元 / taiwan$PricePerSqrtm, -1)
-sqpr <- data.frame("id"=taiwan$id, "price"=taiwan$PricePerSqrtm ,"坪數"=sqrtm)
-sqpr <- sqpr%>%filter(坪數<8000)
-sqpr <- sqpr%>%filter(price<400000)
-anprice<- c(priceMean$mean,priceMax$max,priceMin$min)
-pricedf<- data.frame("縣市"=rep(縣市,times=3),"房價"=anprice
-                     ,"ann"=c(rep("Mean",times=22),rep("Max",times=22),rep("Min",times=22)))
+  priceMean<-ddply(taiwan,.(id),summarize,mean = round(mean(PricePerSqrtm,na.rm = T)))
+  priceMax<-ddply(taiwan,.(id),summarise,max=max(PricePerSqrtm,na.rm = T))
+  priceMin<-ddply(taiwan,.(id),summarise,min=min(PricePerSqrtm,na.rm = T))
+  tradesum<-ddply(taiwan,.(id),summarise,sum=sum(PricePerSqrtm!=0,na.rm = T))
+  縣市 <-c("臺北市","臺中市","基隆市","臺南市","高雄市","新北市","宜蘭縣","桃園市","嘉義市","新竹縣","苗栗縣","南投縣","彰化縣","新竹市","雲林縣","嘉義縣","屏東縣","花蓮縣","臺東縣","金門縣","澎湖縣","連江縣") 
+  縣市<- data.frame("id"=c("A","B","C","D","E","F","G","H","I","J","K","M","N","O","P","Q","T","U","V","W","X","Z"),縣市)
+  priceMean <- data.frame("縣市"=縣市,priceMean)
+  priceMax <- data.frame("縣市"=縣市,priceMax)
+  priceMin <- data.frame("縣市"=縣市,priceMin)
+  tradesum <- data.frame("縣市"=縣市,tradesum)
+  houseuse <- data.frame("price"=round(taiwan$PricePerSqrtm,-4),"交易標的"=taiwan$交易標的)
+  sqrtm <- round((taiwan$總價元 / taiwan$PricePerSqrtm)*0.3025, -1)
+  sqpr <- data.frame("id"=taiwan$id, "price"=taiwan$PricePerSqrtm ,"總價"=taiwan$總價元,"坪數"=sqrtm)
+  sqpr <- sqpr%>%filter(price<400000)
+  sqpr <- sqpr%>%filter(總價<6000000000)
+  anprice<- c(priceMean$mean,priceMax$max,priceMin$min)
+  pricedf<- data.frame("縣市"=rep(縣市,times=3),"房價"=anprice,"ann"=c(rep("Mean",times=22),rep("Max",times=22),rep("Min",times=22)))
+  allmeanps<-round(mean(taiwan$PricePerSqrtm))
+  allmeanp<-round(mean(taiwan$總價元))
+  allmeana<-round(mean(sqpr$坪數))
+  q<-allmeanps/allmeana
+  houseyear<- data.frame("id"=taiwan$id,"交易年月"=round(taiwan$交易年月日,-2)/100,"屋齡"=2020-(round(taiwan$建築完成年月,-4)/10000),"price"=taiwan$PricePerSqrtm)
+  eachp<-ddply(houseyear,.(交易年月),summarize,mean=round(mean(price,na.rm = T)))
+  
+  yearMean<-ddply(houseyear,.(id),summarize,mean = round(mean(屋齡,na.rm = T)))
+  yearMean<-data.frame(縣市,"pricemean"=priceMean$mean,"yearmean"=yearMean$mean)
+  
+  ggplot(priceMean,aes(mean,縣市))+geom_col(position = "dodge")+labs(x="每平方公尺平均價格")+geom_text(aes(label=mean),vjust=0,color=I("blue"),size=5)
+  
+  ggplot(sqpr,aes(坪數,price,fill=id))+geom_point(shape=23)+scale_fill_discrete(name="縣市",labels=縣市)+geom_hline(yintercept = allmeanps)+geom_vline(xintercept = allmeana)
+  
+  ggplot(sqpr,aes(坪數,總價,fill=id))+geom_point(shape=23)+scale_fill_discrete(name="縣市",labels=縣市)+geom_hline(yintercept = allmeanp)+geom_vline(xintercept = allmeana)
+  
+  ggplot(taiwan,aes(id,fill=總樓層數))+geom_histogram(label=taiwan$交易年月日,stat = "count",position = "fill")+labs(x="縣市",y="樓層數比例")
+  
+  ggplot(tradesum,aes(縣市,sum))+geom_col()+labs(y="件數")
+  
+  ggplot(yearMean,aes(yearmean,縣市))+geom_col()+geom_text(aes(label=yearmean),vjust=0,color=I("blue"),size=5)+labs(x="屋齡")
+  
+  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201400,201412)+labs(y="平均房價")
+  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201500,201512)+labs(y="平均房價")
+  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201600,201612)+labs(y="平均房價")
+  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201700,201712)+labs(y="平均房價")
+  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201800,201812)+labs(y="平均房價")
+  ggplot(eachp,aes(交易年月,mean))+geom_point()+geom_line()+xlim(201900,201912)+labs(y="平均房價")
+ 
+  aa<-cor(taiwan$PricePerSqrtm,as.numeric(taiwan$建物移轉總面積平方公尺))
+  plot(taiwan$PricePerSqrtm,as.numeric(taiwan$建物移轉總面積平方公尺), xlab="每平方公尺平均價格"
+       ,ylab="建物轉移面積")
+  abline(lm(as.numeric(taiwan$建物移轉總面積平方公尺)~taiwan$PricePerSqrtm),col="red")
+  legend("topleft",legend=c("r=",aa))
+ 
+  bb<-cor(taiwan$PricePerSqrtm,taiwan$總價元)
+  plot(taiwan$PricePerSqrtm,taiwan$總價元, xlab="每平方公尺平均價格"
+       ,ylab="總價元")
+  abline(lm(taiwan$總價元~taiwan$PricePerSqrtm),col="red")
+  legend("topleft",legend=c("r=",bb))
+  
+  cc<-cor(taiwan$PricePerSqrtm,taiwan$交易年月日)
+  plot(taiwan$PricePerSqrtm,taiwan$交易年月日, xlab="每平方公尺平均價格"
+       ,ylab="交易年月日")
+  abline(lm(taiwan$交易年月日~taiwan$PricePerSqrtm),col="red")
+  legend("topleft",legend=c("r=",cc))
+  
+  dd<-cor(taiwan$PricePerSqrtm,taiwan$總價元)
+  plot(taiwan$PricePerSqrtm,taiwan$總價元, xlab="每平方公尺平均價格"
+       ,ylab="總價元")
+  abline(lm(taiwan$總價元~taiwan$PricePerSqrtm),col="red")
+  legend("topleft",legend=c("r=",dd))
+  
+  ee<-cor(yearMean$pricemean,yearMean$yearmean)
+  plot(yearMean$pricemean,yearMean$yearmean, xlab="平均房價"
+       ,ylab="平均屋齡")
+  abline(lm(yearMean$yearmean~yearMean$pricemean),col="red")
+  legend("topleft",legend=c("r=",ee))
+  
 
-meanPricePlot<-ggplot(priceMean,aes(mean,縣市))+
-  geom_col(position = "dodge")+labs(x="每平方公尺平均價格")
-
-tradeThingPlot<-ggplot(houseuse,aes(price,fill=交易標的))+
-  geom_histogram(stat = "count",position = "fill")+
-  labs(x="每平方公尺價格",y="交易標的比例")+
-  xlim(0,400000)+
-  scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),
-                     labels=c("0%","25%","50%","75%","100%"))
-
-areaPlot<-ggplot(sqpr,aes(坪數,price,fill=id))+
-  geom_point(shape=23)+scale_fill_discrete(name="縣市",labels=縣市)
-
-floorPlot<-ggplot(taiwan,aes(id,fill=總樓層數))+
-  geom_histogram(stat = "count",position = "fill")+
-  labs(x="縣市",y="樓層數比例")+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),
-                                            labels=c("0%","25%","50%","75%","100%"))
-
-mmmpircePlot<-ggplot(pricedf,aes(縣市,房價,fill=ann))+
-  geom_col(position = "dodge")
-
-numbersPlot<-ggplot(tradesum,aes(縣市,sum))+geom_col()+labs(y="件數")
-
-
-
-
+  
+  
+  
+  
+  
 manage<-ddply(taiwan[taiwan$有無管理組織=="有",],.(id),summarize
               ,mean = round(mean(PricePerSqrtm,na.rm = T)))
 notManage<-ddply(taiwan[taiwan$有無管理組織=="無",],.(id),summarize
@@ -298,7 +336,7 @@ plotAllMap<-function()
                nrow = 2)
 }
 
-setwd("~/real-estate/108-2")
+setwd("C:/Users/user/Documents/real-estate/108-2")
 
 taiwan <- adply(105:109,.margins = 1,.fun=readyear)[-1]
 
